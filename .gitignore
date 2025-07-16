@@ -1,5 +1,6 @@
 # Terraform
 .terraform/
+**/.terraform/
 *.tfstate
 *.tfstate.*
 crash.log
@@ -7,6 +8,7 @@ crash.log
 *.tfvars.json
 *.backup
 .terraform.lock.hcl
+**/.terraform.lock.hcl
 
 # Environment files
 .env
