@@ -97,45 +97,45 @@ List of droplet objects. Each object supports:
 - backups (bool, optional)
 EOT
   type = list(object({
-    name      = string
-    region    = optional(string)
-    size      = string
-    image     = string
-    tags      = optional(list(string))
-    user_data = optional(string)
-    user_data_file = optional(string)
+    name               = string
+    region             = optional(string)
+    size               = string
+    image              = string
+    tags               = optional(list(string))
+    user_data          = optional(string)
+    user_data_file     = optional(string)
     user_data_template = optional(string)
-    monitoring = optional(bool)
-    backups    = optional(bool)
+    monitoring         = optional(bool)
+    backups            = optional(bool)
   }))
   validation {
     condition = alltrue([
       for d in var.droplets :
-        length(trimspace(d.name)) > 0 &&
-        length(trimspace(d.size)) > 0 &&
-        length(trimspace(d.image)) > 0
+      length(trimspace(d.name)) > 0 &&
+      length(trimspace(d.size)) > 0 &&
+      length(trimspace(d.image)) > 0
     ])
     error_message = "Each droplet must have a non-empty name, size, and image."
   }
   validation {
     condition = alltrue([
       for d in var.droplets :
-        d.region == null || contains([
-          "nyc1", "nyc2", "nyc3", "ams3", "sfo2", "sfo3", "sgp1", "lon1", "fra1", "tor1", "blr1", "syd1", "atl1"
-        ], d.region)
+      d.region == null || contains([
+        "nyc1", "nyc2", "nyc3", "ams3", "sfo2", "sfo3", "sgp1", "lon1", "fra1", "tor1", "blr1", "syd1", "atl1"
+      ], d.region)
     ])
     error_message = "If set, droplet region must be a valid DigitalOcean region."
   }
   validation {
     condition = alltrue([
       for d in var.droplets :
-        contains([
-          "s-1vcpu-512mb-10gb", "s-1vcpu-1gb", "s-2vcpu-2gb", "s-2vcpu-4gb", "s-4vcpu-8gb", "s-8vcpu-16gb",
-          "c-2", "c-4", "c-8", "c-16", "c-32", "c-48",
-          "g-2vcpu-8gb", "g-4vcpu-16gb", "g-8vcpu-32gb", "g-16vcpu-64gb", "g-32vcpu-128gb", "g-40vcpu-160gb",
-          "m-2vcpu-16gb", "m-4vcpu-32gb", "m-8vcpu-64gb", "m-16vcpu-128gb", "m-24vcpu-192gb", "m-32vcpu-256gb",
-          "so-2vcpu-16gb", "so-4vcpu-32gb", "so-8vcpu-64gb", "so-16vcpu-128gb", "so-24vcpu-192gb", "so-32vcpu-256gb"
-        ], d.size)
+      contains([
+        "s-1vcpu-512mb-10gb", "s-1vcpu-1gb", "s-2vcpu-2gb", "s-2vcpu-4gb", "s-4vcpu-8gb", "s-8vcpu-16gb",
+        "c-2", "c-4", "c-8", "c-16", "c-32", "c-48",
+        "g-2vcpu-8gb", "g-4vcpu-16gb", "g-8vcpu-32gb", "g-16vcpu-64gb", "g-32vcpu-128gb", "g-40vcpu-160gb",
+        "m-2vcpu-16gb", "m-4vcpu-32gb", "m-8vcpu-64gb", "m-16vcpu-128gb", "m-24vcpu-192gb", "m-32vcpu-256gb",
+        "so-2vcpu-16gb", "so-4vcpu-32gb", "so-8vcpu-64gb", "so-16vcpu-128gb", "so-24vcpu-192gb", "so-32vcpu-256gb"
+      ], d.size)
     ])
     error_message = "Each droplet size must be a valid DigitalOcean size slug. See https://www.digitalocean.com/pricing/droplets for options."
   }
@@ -163,17 +163,17 @@ EOT
   validation {
     condition = alltrue([
       for v in var.volumes :
-        length(trimspace(v.name)) > 0 &&
-        v.size >= 1
+      length(trimspace(v.name)) > 0 &&
+      v.size >= 1
     ])
     error_message = "Each volume must have a non-empty name and a size of at least 1 GB."
   }
   validation {
     condition = alltrue([
       for v in var.volumes :
-        v.region == null || contains([
-          "nyc1", "nyc2", "nyc3", "ams3", "sfo2", "sfo3", "sgp1", "lon1", "fra1", "tor1", "blr1", "syd1", "atl1"
-        ], v.region)
+      v.region == null || contains([
+        "nyc1", "nyc2", "nyc3", "ams3", "sfo2", "sfo3", "sgp1", "lon1", "fra1", "tor1", "blr1", "syd1", "atl1"
+      ], v.region)
     ])
     error_message = "If set, volume region must be a valid DigitalOcean region."
   }
@@ -220,10 +220,10 @@ variable "firewall_name" {
 variable "firewall_inbound_rules" {
   description = "List of inbound rules for the firewall (see DigitalOcean provider docs)."
   type        = list(any)
-  default     = [
+  default = [
     {
-      protocol = "tcp"
-      port_range = "22"
+      protocol         = "tcp"
+      port_range       = "22"
       source_addresses = ["0.0.0.0/0", "::/0"]
     }
   ]
@@ -231,42 +231,42 @@ variable "firewall_inbound_rules" {
 
 variable "firewall_outbound_rules" {
   description = "List of outbound rules for the firewall (see DigitalOcean provider docs)."
-  type        = list(object({
-    protocol                = string
-    port_range              = optional(string)
-    destination_addresses   = optional(list(string))
-    destination_tags        = optional(list(string))
-    destination_droplet_ids = optional(list(string))
+  type = list(object({
+    protocol                       = string
+    port_range                     = optional(string)
+    destination_addresses          = optional(list(string))
+    destination_tags               = optional(list(string))
+    destination_droplet_ids        = optional(list(string))
     destination_load_balancer_uids = optional(list(string))
     destination_kubernetes_ids     = optional(list(string))
   }))
-  default     = [
+  default = [
     {
-      protocol = "icmp"
-      port_range = null
-      destination_addresses = ["0.0.0.0/0", "::/0"]
-      destination_tags = null
-      destination_droplet_ids = null
+      protocol                       = "icmp"
+      port_range                     = null
+      destination_addresses          = ["0.0.0.0/0", "::/0"]
+      destination_tags               = null
+      destination_droplet_ids        = null
       destination_load_balancer_uids = null
-      destination_kubernetes_ids = null
+      destination_kubernetes_ids     = null
     },
     {
-      protocol = "tcp"
-      port_range = "all"
-      destination_addresses = ["0.0.0.0/0", "::/0"]
-      destination_tags = null
-      destination_droplet_ids = null
+      protocol                       = "tcp"
+      port_range                     = "all"
+      destination_addresses          = ["0.0.0.0/0", "::/0"]
+      destination_tags               = null
+      destination_droplet_ids        = null
       destination_load_balancer_uids = null
-      destination_kubernetes_ids = null
+      destination_kubernetes_ids     = null
     },
     {
-      protocol = "udp"
-      port_range = "all"
-      destination_addresses = ["0.0.0.0/0", "::/0"]
-      destination_tags = null
-      destination_droplet_ids = null
+      protocol                       = "udp"
+      port_range                     = "all"
+      destination_addresses          = ["0.0.0.0/0", "::/0"]
+      destination_tags               = null
+      destination_droplet_ids        = null
       destination_load_balancer_uids = null
-      destination_kubernetes_ids = null
+      destination_kubernetes_ids     = null
     }
   ]
 }

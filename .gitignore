@@ -29,3 +29,11 @@ crash.log
 *~
 Thumbs.db
 ehthumbs.db 
+
+# Terratest/Go
+*.test
+*.out
+coverage*
+
+# Checkov
+.checkov* 

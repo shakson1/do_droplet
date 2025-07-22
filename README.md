@@ -196,4 +196,52 @@ See [examples/complete/main.tf](examples/complete/main.tf)
 - Review DigitalOcean limits and pricing for droplets, volumes, and IPs.
 - Use firewall rules to restrict access to only trusted sources.
 
+## Upgrading the Module
+
+When upgrading the module, especially if resources are renamed or restructured, use the `terraform state mv` command to avoid resource recreation. For example:
+
+```sh
+terraform state mv 'module.old_resource' 'module.new_resource'
+```
+
+Refer to the [Terraform documentation on state management](https://developer.hashicorp.com/terraform/cli/state/move) for more details.
+
+## Remote State Example
+
+For production deployments, use a remote state backend to store your Terraform state securely and enable team collaboration. Example using DigitalOcean Spaces:
+
+```hcl
+terraform {
+  backend "s3" {
+    endpoint   = "https://nyc3.digitaloceanspaces.com"
+    bucket     = "your-terraform-state-bucket"
+    key        = "do-droplet/terraform.tfstate"
+    region     = "us-east-1"
+    access_key = "${var.spaces_access_key}"
+    secret_key = "${var.spaces_secret_key}"
+    skip_credentials_validation = true
+    skip_metadata_api_check     = true
+    force_path_style           = true
+  }
+}
+```
+
+See [DigitalOcean Spaces as Terraform Remote State Backend](https://docs.digitalocean.com/reference/terraform/how-to/store-state-in-spaces/) for more details.
+
+## Automated Testing
+
+For infrastructure testing, consider using [Terratest](https://terratest.gruntwork.io/) for integration tests and [Checkov](https://www.checkov.io/) for static security and compliance checks.
+
+Example Terratest usage (Go):
+```sh
+go test -v ./test
+```
+
+Example Checkov usage:
+```sh
+checkov -d .
+```
+
+Add your test cases in a `test/` directory at the root of the repo.
+
 --- 

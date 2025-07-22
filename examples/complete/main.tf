@@ -95,7 +95,7 @@ module "doks_droplets" {
     {
       protocol = "tcp"
       port_range = "22"
-      source_addresses = ["0.0.0.0/0", "::/0"]
+      source_addresses = ["203.0.113.10/32", "::1/128"]
     },
     {
       protocol = "tcp"
