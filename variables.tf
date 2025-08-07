@@ -16,6 +16,22 @@ variable "region" {
   }
 }
 
+variable "prevent_destroy" {
+  description = "Whether to prevent accidental destruction of resources."
+  type        = bool
+  default     = false
+}
+
+variable "environment" {
+  description = "Environment name for resource naming and tagging."
+  type        = string
+  default     = null
+  validation {
+    condition     = var.environment == null || can(regex("^[a-z0-9-]+$", var.environment))
+    error_message = "Environment must contain only lowercase letters, numbers, and hyphens."
+  }
+}
+
 variable "vpc_id" {
   description = "Existing VPC ID to use. If not set, a new VPC will be created."
   type        = string
@@ -56,6 +72,12 @@ variable "tags" {
   description = "Tags to apply to all resources (VPC, volumes, floating IPs, etc)."
   type        = list(string)
   default     = []
+}
+
+variable "user_data_vars" {
+  description = "Variables to pass to user data templates."
+  type        = map(any)
+  default     = {}
 }
 
 variable "default_user_data_file" {
@@ -139,6 +161,10 @@ EOT
     ])
     error_message = "Each droplet size must be a valid DigitalOcean size slug. See https://www.digitalocean.com/pricing/droplets for options."
   }
+  validation {
+    condition     = length(distinct([for d in var.droplets : d.name])) == length(var.droplets)
+    error_message = "Droplet names must be unique."
+  }
 }
 
 variable "volumes" {
@@ -150,6 +176,7 @@ List of volume objects. Each object supports:
 - description (string, optional)
 - filesystem_type (string, optional)
 - snapshot_id (string, optional)
+- tags (list(string), optional)
 EOT
   type = list(object({
     name            = string
@@ -158,6 +185,7 @@ EOT
     description     = optional(string)
     filesystem_type = optional(string)
     snapshot_id     = optional(string)
+    tags            = optional(list(string))
   }))
   default = []
   validation {
@@ -176,6 +204,10 @@ EOT
       ], v.region)
     ])
     error_message = "If set, volume region must be a valid DigitalOcean region."
+  }
+  validation {
+    condition     = length(distinct([for v in var.volumes : v.name])) == length(var.volumes)
+    error_message = "Volume names must be unique."
   }
 }
 
@@ -275,4 +307,60 @@ variable "existing_firewall_id" {
   description = "ID of an existing DigitalOcean firewall to assign to the droplets. If set, no new firewall will be created."
   type        = string
   default     = null
+}
+
+# Load Balancer Variables
+variable "enable_load_balancer" {
+  description = "Whether to create a load balancer."
+  type        = bool
+  default     = false
+}
+
+variable "load_balancer_name" {
+  description = "Name for the load balancer."
+  type        = string
+  default     = "droplet-lb"
+}
+
+variable "load_balancer_forwarding_rules" {
+  description = "List of forwarding rules for the load balancer."
+  type = list(object({
+    entry_port      = number
+    entry_protocol  = string
+    target_port     = number
+    target_protocol = string
+    certificate_id  = optional(string)
+    tls_passthrough = optional(bool)
+  }))
+  default = [
+    {
+      entry_port      = 80
+      entry_protocol  = "http"
+      target_port     = 80
+      target_protocol = "http"
+    }
+  ]
+}
+
+variable "load_balancer_healthcheck" {
+  description = "Health check configuration for the load balancer."
+  type = object({
+    protocol                 = string
+    port                     = number
+    path                     = optional(string)
+    check_interval_seconds   = optional(number)
+    response_timeout_seconds = optional(number)
+    healthy_threshold        = optional(number)
+    unhealthy_threshold      = optional(number)
+  })
+  default = {
+    protocol = "tcp"
+    port     = 80
+  }
+}
+
+variable "load_balancer_droplet_tag" {
+  description = "Tag to use for droplets that should be included in the load balancer."
+  type        = string
+  default     = "web"
 } 

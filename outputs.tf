@@ -13,6 +13,11 @@ output "droplet_private_ips" {
   value       = { for k, d in digitalocean_droplet.this : k => d.ipv4_address_private }
 }
 
+output "droplet_status" {
+  description = "Status of all droplets."
+  value       = { for k, d in digitalocean_droplet.this : k => d.status }
+}
+
 output "volume_ids" {
   description = "IDs of all created volumes."
   value       = { for k, v in digitalocean_volume.this : k => v.id }
@@ -68,4 +73,34 @@ output "vpc_id" {
 output "droplet_tags" {
   description = "Tags applied to each droplet."
   value       = { for k, d in digitalocean_droplet.this : k => d.tags }
+}
+
+# Load Balancer Outputs
+output "load_balancer_id" {
+  description = "ID of the created load balancer (if any)."
+  value       = try(digitalocean_loadbalancer.this[0].id, null)
+}
+
+output "load_balancer_ip" {
+  description = "IP address of the load balancer (if any)."
+  value       = try(digitalocean_loadbalancer.this[0].ip, null)
+}
+
+output "load_balancer_urn" {
+  description = "URN of the load balancer (if any)."
+  value       = try(digitalocean_loadbalancer.this[0].urn, null)
+}
+
+# Summary Outputs
+output "summary" {
+  description = "Summary of all created resources."
+  value = {
+    droplets_count        = length(digitalocean_droplet.this)
+    volumes_count         = length(digitalocean_volume.this)
+    floating_ips_count    = length(digitalocean_floating_ip.this)
+    firewall_created      = var.enable_firewall && var.existing_firewall_id == null
+    load_balancer_created = var.enable_load_balancer
+    vpc_created           = var.vpc_id == null
+    ssh_key_created       = var.create_ssh_key
+  }
 } 
