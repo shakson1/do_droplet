@@ -1,35 +1,44 @@
-// DigitalOcean provider
-provider "digitalocean" {
-  token = var.do_token
-}
+################################################################################
+# VPC
+################################################################################
 
-# Optionally create a VPC if vpc_id is not provided
+# Create a new VPC if one is not provided
+# This enables private networking between droplets
 resource "digitalocean_vpc" "this" {
   count  = var.vpc_id == null ? 1 : 0
   name   = "${local.name_prefix}${var.vpc_name}"
   region = var.region
 
-  # Add lifecycle policy to prevent accidental deletion
   lifecycle {
     prevent_destroy = false
   }
 }
 
-# SSH key (optional creation)
+################################################################################
+# SSH Key
+################################################################################
+
+# Create a new SSH key in DigitalOcean if requested
+# Otherwise, use existing SSH keys via fingerprints
 resource "digitalocean_ssh_key" "this" {
   count      = var.create_ssh_key ? 1 : 0
   name       = "${local.name_prefix}${var.ssh_key_name}"
   public_key = var.ssh_public_key
 
-  # Add lifecycle policy
   lifecycle {
     prevent_destroy = false
   }
 }
 
-# Droplets (multiple)
+################################################################################
+# Droplets
+################################################################################
+
+# Create multiple droplets based on the droplets variable
+# Supports per-droplet configuration including size, image, region, and user data
 resource "digitalocean_droplet" "this" {
   for_each = { for d in var.droplets : d.name => d }
+
   name     = "${local.name_prefix}${each.value.name}"
   region   = each.value.region != null ? each.value.region : var.region
   size     = each.value.size
@@ -38,7 +47,12 @@ resource "digitalocean_droplet" "this" {
   vpc_uuid = local.vpc_id
   ssh_keys = local.ssh_keys
 
-  # Improved user_data logic with better error handling
+  # User data with fallback hierarchy:
+  # 1. Per-droplet template file
+  # 2. Per-droplet static file
+  # 3. Per-droplet inline data
+  # 4. Module-level default template
+  # 5. Module-level default file
   user_data = try(
     can(each.value.user_data_template) && each.value.user_data_template != null ? templatefile(each.value.user_data_template, merge(var.user_data_vars, { droplet_name = each.value.name })) :
     can(each.value.user_data_file) && each.value.user_data_file != null ? file(each.value.user_data_file) :
@@ -49,19 +63,25 @@ resource "digitalocean_droplet" "this" {
     null
   )
 
+  # Monitoring and backups with per-droplet override capability
   monitoring = can(each.value.monitoring) && each.value.monitoring != null ? each.value.monitoring : var.default_monitoring
   backups    = can(each.value.backups) && each.value.backups != null ? each.value.backups : var.default_backups
 
-  # Add lifecycle policy
   lifecycle {
     prevent_destroy = false
-    ignore_changes  = [image] # Ignore image changes to prevent recreation
+    ignore_changes  = [image] # Prevent recreation on image updates
   }
 }
 
-# Volumes (multiple, attached to droplets)
+################################################################################
+# Block Storage Volumes
+################################################################################
+
+# Create block storage volumes for persistent data
+# Volumes can be attached to droplets in the same region
 resource "digitalocean_volume" "this" {
-  for_each        = { for v in var.volumes : v.name => v }
+  for_each = { for v in var.volumes : v.name => v }
+
   region          = each.value.region != null ? each.value.region : var.region
   name            = "${local.name_prefix}${each.value.name}"
   size            = each.value.size
@@ -70,42 +90,57 @@ resource "digitalocean_volume" "this" {
   snapshot_id     = each.value.snapshot_id
   tags            = concat(each.value.tags != null ? each.value.tags : [], local.common_tags)
 
-  # Add lifecycle policy
   lifecycle {
     prevent_destroy = false
   }
 }
 
+# Attach volumes to droplets
+# Each volume can only be attached to one droplet at a time
 resource "digitalocean_volume_attachment" "this" {
-  for_each   = { for va in var.volume_attachments : "${va.droplet_name}-${va.volume_name}" => va }
+  for_each = { for va in var.volume_attachments : "${va.droplet_name}-${va.volume_name}" => va }
+
   droplet_id = digitalocean_droplet.this[each.value.droplet_name].id
   volume_id  = digitalocean_volume.this[each.value.volume_name].id
 
-  # Add lifecycle policy
   lifecycle {
     prevent_destroy = false
   }
 }
 
-# Floating IPs (optional, assign to droplets)
+################################################################################
+# Floating IPs
+################################################################################
+
+# Create and assign floating IPs to droplets
+# Floating IPs provide static public IP addresses
+# that can be reassigned between droplets for high availability
 resource "digitalocean_floating_ip" "this" {
-  for_each   = { for f in var.floating_ips : f.droplet_name => f }
+  for_each = { for f in var.floating_ips : f.droplet_name => f }
+
   region     = digitalocean_droplet.this[each.value.droplet_name].region
   droplet_id = digitalocean_droplet.this[each.value.droplet_name].id
 
-  # Add lifecycle policy
   lifecycle {
     prevent_destroy = false
   }
 }
 
-# Firewall with improved configuration
+################################################################################
+# Firewall
+################################################################################
+
+# Create a cloud firewall to control traffic to droplets
+# Supports both inbound and outbound rules
+# Can filter by IP addresses, tags, or other resources
 resource "digitalocean_firewall" "this" {
-  count       = var.enable_firewall && var.existing_firewall_id == null ? 1 : 0
+  count = var.enable_firewall && var.existing_firewall_id == null ? 1 : 0
+
   name        = "${local.name_prefix}${var.firewall_name}"
   droplet_ids = [for d in digitalocean_droplet.this : d.id]
   tags        = local.common_tags
 
+  # Inbound rules define what traffic can reach the droplets
   dynamic "inbound_rule" {
     for_each = var.firewall_inbound_rules
     content {
@@ -119,6 +154,7 @@ resource "digitalocean_firewall" "this" {
     }
   }
 
+  # Outbound rules define what traffic can leave the droplets
   dynamic "outbound_rule" {
     for_each = var.firewall_outbound_rules
     content {
@@ -132,19 +168,27 @@ resource "digitalocean_firewall" "this" {
     }
   }
 
-  # Add lifecycle policy
   lifecycle {
     prevent_destroy = false
   }
 }
 
-# Load Balancer (optional)
+################################################################################
+# Load Balancer
+################################################################################
+
+# Create a load balancer to distribute traffic across multiple droplets
+# Includes health checks to automatically remove unhealthy droplets
+# Droplets are selected by tag for automatic scaling
 resource "digitalocean_loadbalancer" "this" {
-  count    = var.enable_load_balancer ? 1 : 0
+  count = var.enable_load_balancer ? 1 : 0
+
   name     = "${local.name_prefix}${var.load_balancer_name}"
   region   = var.region
   vpc_uuid = local.vpc_id
 
+  # Forwarding rules define how traffic is routed
+  # Supports HTTP, HTTPS, TCP, and UDP protocols
   dynamic "forwarding_rule" {
     for_each = var.load_balancer_forwarding_rules
     content {
@@ -157,6 +201,8 @@ resource "digitalocean_loadbalancer" "this" {
     }
   }
 
+  # Health check configuration
+  # Unhealthy droplets are automatically removed from the pool
   healthcheck {
     protocol                 = var.load_balancer_healthcheck.protocol
     port                     = var.load_balancer_healthcheck.port
@@ -167,9 +213,9 @@ resource "digitalocean_loadbalancer" "this" {
     unhealthy_threshold      = try(var.load_balancer_healthcheck.unhealthy_threshold, 5)
   }
 
+  # Use tags to automatically include droplets in the load balancer
   droplet_tag = var.load_balancer_droplet_tag
 
-  # Add lifecycle policy
   lifecycle {
     prevent_destroy = false
   }

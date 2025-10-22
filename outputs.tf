@@ -1,3 +1,7 @@
+################################################################################
+# Droplet Outputs
+################################################################################
+
 output "droplet_ids" {
   description = "IDs of all created droplets."
   value       = { for k, d in digitalocean_droplet.this : k => d.id }
@@ -18,10 +22,18 @@ output "droplet_status" {
   value       = { for k, d in digitalocean_droplet.this : k => d.status }
 }
 
+################################################################################
+# Volume Outputs
+################################################################################
+
 output "volume_ids" {
   description = "IDs of all created volumes."
   value       = { for k, v in digitalocean_volume.this : k => v.id }
 }
+
+################################################################################
+# Network Outputs
+################################################################################
 
 output "floating_ip_addresses" {
   description = "Floating IP addresses assigned to droplets."
@@ -75,7 +87,10 @@ output "droplet_tags" {
   value       = { for k, d in digitalocean_droplet.this : k => d.tags }
 }
 
+################################################################################
 # Load Balancer Outputs
+################################################################################
+
 output "load_balancer_id" {
   description = "ID of the created load balancer (if any)."
   value       = try(digitalocean_loadbalancer.this[0].id, null)
@@ -91,7 +106,10 @@ output "load_balancer_urn" {
   value       = try(digitalocean_loadbalancer.this[0].urn, null)
 }
 
+################################################################################
 # Summary Outputs
+################################################################################
+
 output "summary" {
   description = "Summary of all created resources."
   value = {

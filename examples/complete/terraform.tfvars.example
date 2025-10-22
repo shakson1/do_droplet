@@ -1,0 +1,18 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+# DigitalOcean API token
+# Get your token from: https://cloud.digitalocean.com/account/api/tokens
+do_token = "dop_v1_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# SSH key fingerprints
+# Find your key fingerprints at: https://cloud.digitalocean.com/account/security
+# You can also get them with: doctl compute ssh-key list
+# ssh_key_fingerprints = [
+#   "aa:bb:cc:dd:ee:ff:00:11:22:33:44:55:66:77:88:99"
+# ]
+
+# Alternatively, create a new SSH key
+# Uncomment these lines and comment out ssh_key_fingerprints above
+# create_ssh_key = true
+# ssh_public_key = file("~/.ssh/id_rsa.pub")
+

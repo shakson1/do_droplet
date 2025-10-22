@@ -1,5 +1,10 @@
+################################################################################
+# Terraform and Provider Version Constraints
+################################################################################
+
 terraform {
   required_version = ">= 1.5.0"
+
   required_providers {
     digitalocean = {
       source  = "digitalocean/digitalocean"

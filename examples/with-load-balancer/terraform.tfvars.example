@@ -1,0 +1,17 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+# DigitalOcean API token
+do_token = "dop_v1_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# SSH key fingerprints
+ssh_key_fingerprints = [
+  "aa:bb:cc:dd:ee:ff:00:11:22:33:44:55:66:77:88:99"
+]
+
+# Restrict SSH access to specific IPs for security
+# Replace with your office/home IP addresses
+allowed_ssh_ips = [
+  "203.0.113.10/32",  # Office IP
+  "198.51.100.20/32"  # Home IP
+]
+

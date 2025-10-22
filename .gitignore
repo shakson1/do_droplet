@@ -1,39 +1,51 @@
-# Terraform
-.terraform/
-**/.terraform/
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
 *.tfstate
 *.tfstate.*
+
+# Crash log files
 crash.log
+crash.*.log
+
+# Exclude all .tfvars files, which are likely to contain sensitive data
 *.tfvars
 *.tfvars.json
-*.backup
-.terraform.lock.hcl
-**/.terraform.lock.hcl
 
-# Environment files
-.env
-.env.*
+# Ignore override files as they are usually used to override resources locally
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
 
-# Logs
-*.log
+# Include override files you do wish to add to version control using negation pattern
+# !example_override.tf
 
-# Backups
-*.bak
-*.old
+# Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
+*tfplan*
 
-# Editor/OS
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
+# Ignore Mac .DS_Store files
 .DS_Store
+
+# Ignore IDE settings
 .idea/
 .vscode/
 *.swp
+*.swo
 *~
-Thumbs.db
-ehthumbs.db 
 
-# Terratest/Go
-*.test
-*.out
-coverage*
+# Ignore test output
+test/*.log
+test/terraform.tfstate*
+test/.terraform/*
 
-# Checkov
-.checkov* 
+# Terraform lock file (include in version control but ignore local changes)
+# .terraform.lock.hcl
+
+# Go test cache
+go.sum

@@ -1,20 +1,28 @@
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    digitalocean = {
+      source  = "digitalocean/digitalocean"
+      version = "~> 2.34.1"
+    }
+  }
+}
+
+# Configure the DigitalOcean Provider
+provider "digitalocean" {
+  token = var.do_token
+}
+
 variable "do_token" {
   description = "DigitalOcean API token."
   type        = string
   sensitive   = true
 }
 
-# Example: Use an existing VPC (uncomment and set your VPC ID)
-# variable "vpc_id" {
-#   description = "Existing VPC ID."
-#   type        = string
-#   default     = null
-# }
-
 module "doks_droplets" {
-  source      = "../../"
-  do_token    = var.do_token
-  region      = "nyc1"
+  source = "../../"
+
+  region = "nyc1"
   environment = "prod"
 
   # Security: Prevent accidental destruction in production

@@ -1,9 +1,11 @@
-# Common tags for all resources
+################################################################################
+# Local Values
+################################################################################
+
 locals {
   common_tags = concat(var.tags, [
     "managed-by:terraform",
-    "module:digitalocean-droplet",
-    "created:${formatdate("YYYY-MM-DD", timestamp())}"
+    "module:digitalocean-droplet"
   ])
 
   # Computed VPC ID
@@ -11,12 +13,6 @@ locals {
 
   # Computed SSH keys
   ssh_keys = var.create_ssh_key ? [digitalocean_ssh_key.this[0].fingerprint] : var.ssh_key_fingerprints
-
-  # Available droplet sizes for validation
-  available_sizes = data.digitalocean_sizes.available.sizes[*].slug
-
-  # Available images for validation
-  available_images = data.digitalocean_images.available.images[*].slug
 
   # Resource naming with environment prefix
   name_prefix = var.environment != null ? "${var.environment}-" : ""
